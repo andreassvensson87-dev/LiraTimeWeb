@@ -62,3 +62,21 @@ test('calendar day click filters summary to that day and synchronizes date input
  $('#calendar-prev').onclick();assert.match($('#calendar-month').textContent,/augusti/);
  assert.equal($('#summary-from').value,'2026-09-27');
 });
+
+test('optional file saves subsequent changes and disconnect keeps browser data',async()=>{
+ let text='',writes=0;
+ const handle={name:'test.json',async getFile(){return {size:text.length,text:async()=>text};},async createWritable(){return {async write(value){text=value;},async close(){writes++;},async abort(){}};}};
+ window.showSaveFilePicker=async()=>handle;
+ await $('#create-file').onclick();assert.deepEqual(JSON.parse(text),saved());
+ await $('#sidebar-projects').onclick({target:{closest:s=>s==='[data-project-start]'?{dataset:{projectStart:'general'}}:null}});
+ await $('#disconnect-file').onclick();assert.deepEqual(JSON.parse(text),saved());assert.ok(writes>=2);
+ const before=text;await $('#stop-timer').onclick();assert.equal(text,before);assert.equal(saved().active,null);
+});
+test('opening a file loads its state; invalid files leave browser data intact',async()=>{
+ const imported=initialState();imported.projects[0].name='From file';let text=JSON.stringify(imported);
+ window.showOpenFilePicker=async()=>[{name:'existing.json',async getFile(){return {size:text.length,text:async()=>text};},async requestPermission(){return 'granted';}}];
+ globalThis.confirm=()=>true;
+ await $('#open-file').onclick();assert.equal(saved().projects[0].name,'From file');await $('#disconnect-file').onclick();
+ const before=JSON.stringify(saved());text='invalid';await $('#open-file').onclick();assert.equal(JSON.stringify(saved()),before);
+ delete globalThis.confirm;
+});

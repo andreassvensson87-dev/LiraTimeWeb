@@ -41,6 +41,14 @@ Skapa projekt och redigera namn/färg. Arkivering gömmer projektet från startl
 
 Klicka på en dag i månadskalendern för att se dagens summering. Dagar med registrerad tid markeras med en prick. Bläddra mellan månader med pilarna eller välj **Till idag**. Du kan även välja datumintervall, **Idag** eller **Den här veckan**. Visar total tid, grupperat per dag och projekt, och varje registrerings kommentar inklusive radbrytningar. Arkiverade projekt ingår. Datumrubriken öppnar dagen i tidslinjen; pennan öppnar registreringen för redigering. CSV-export gäller den valda perioden och inkluderar kommentarerna. Högst ett år kan visas åt gången.
 
+## Valfri tidsfil på hårddisken
+
+Under **Sparas lokalt** kan du välja **Spara till ny fil** för att kopiera nuvarande uppgifter till en JSON-fil, eller **Öppna tidsfil** för att läsa en befintlig fil. Öppning ersätter webbläsarens uppgifter efter bekräftelse. Därefter sparas ändringar både i webbläsaren och i filen. Filnamn och sparstatus visas i samma meny.
+
+Välj filen igen efter omladdning eller nästa gång du öppnar appen. Utan ansluten fil fungerar webbläsarlagringen som tidigare. **Koppla från fil** behåller uppgifterna och fortsätter med enbart webbläsarlagring. Direkt fillagring kräver Chrome eller Edge på datorn.
+
+Om filen inte kan sparas behålls ändringarna i webbläsaren och en varning visas. Om filen har ändrats utanför appen stoppas filskrivningen. Spara då webbläsarens version till en ny fil, eller öppna den externa filen om den ska ersätta webbläsarens version. Filen är inte avsedd för samtidig redigering från flera datorer.
+
 ## Lagring och säkerhetskopiering
 
 Projekt, kommentarer, avslutade registreringar och den pågående klockans starttid sparas i webbläsarens **localStorage**, nyckel `liratime.v1`. Samma adress, port och webbläsarprofil behövs för att komma åt samma uppgifter. Klockan fortsätter räknas när fliken är stängd eller datorn sover, tills den stoppas.
