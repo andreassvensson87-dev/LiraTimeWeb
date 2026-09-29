@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialState,validState,duration,dayBounds,overlap,clock} from '../dist/core.mjs';
+test('initial state and restored active timer are valid; corrupted backups are rejected',()=>{const s=initialState();assert.ok(validState(s));s.active={id:'a',projectId:'general',start:1000,note:'test'};assert.ok(validState(s));s.active.projectId='missing';assert.equal(validState(s),false);assert.equal(validState({version:1}),false);});
+test('splits overnight entries across calendar days without double counting',()=>{const e={start:+new Date('2026-09-28T23:30:00'),end:+new Date('2026-09-29T01:15:00')};assert.equal(duration(e,'2026-09-28'),30*60000);assert.equal(duration(e,'2026-09-29'),75*60000);assert.equal(duration(e,'2026-09-30'),0);});
+test('active timer uses timestamps and survives time spent with app closed',()=>{const start=+new Date('2026-09-29T09:00:00');assert.equal(duration({start},'2026-09-29',start+3*3600000),3*3600000);assert.equal(clock(3*3600000),'03:00:00');});
+test('adjacent entries allowed, overlap blocked, edits ignore their own entry',()=>{const e={id:'a',start:100,end:200};assert.equal(overlap([e],{start:200,end:300}),false);assert.equal(overlap([e],{start:150,end:250}),true);assert.equal(overlap([e],{start:150,end:250},'a'),false);assert.equal(overlap([{id:'active',start:100}],{start:150,end:200}),true);});
+test('calendar day bounds follow local daylight saving time',()=>{process.env.TZ='Europe/Stockholm';const [a,b]=dayBounds('2026-10-25');assert.equal(b-a,25*3600000);const [c,d]=dayBounds('2026-03-29');assert.equal(d-c,23*3600000);});
