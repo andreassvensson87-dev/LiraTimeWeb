@@ -80,3 +80,49 @@ test('opening a file loads its state; invalid files leave browser data intact',a
  const before=JSON.stringify(saved());text='invalid';await $('#open-file').onclick();assert.equal(JSON.stringify(saved()),before);
  delete globalThis.confirm;
 });
+
+import {createFileMemory} from '../dist/file-store.mjs';
+import {memoryDB} from './file-memory-helper.mjs';
+test('reload reconnects remembered file without a picker and later writes reach it',async()=>{
+ const db=memoryDB();globalThis.indexedDB=db;
+ let text=JSON.stringify(saved()),permission='granted',prompts=0;
+ const handle={name:'remembered.json',async queryPermission(){return permission;},async requestPermission(){prompts++;return permission;},async getFile(){return {size:text.length,text:async()=>text};},async createWritable(){let next;return {async write(value){next=value;},async close(){text=next;},async abort(){}};}};
+ await createFileMemory(db).save(handle);
+ window.showSaveFilePicker=async()=>{throw Error('Must not open picker');};window.showOpenFilePicker=window.showSaveFilePicker;
+ await (await import('../dist/app.mjs?remembered')).fileReady;
+ assert.match($('#file-status').textContent,/remembered.json.*ansluten/);assert.equal(prompts,0);
+ await $('#sidebar-projects').onclick({target:{closest:s=>s==='[data-project-start]'?{dataset:{projectStart:'general'}}:null}});
+ // Reconnection waits for outstanding file writes before inspecting the file again.
+ await $('#disconnect-file').onclick();assert.deepEqual(JSON.parse(text),saved());
+ assert.equal(await createFileMemory(db).load(),null);
+ await createFileMemory(db).save(handle);permission='prompt';
+ await (await import('../dist/app.mjs?permission-needed')).fileReady;
+ assert.equal($('#reconnect-file').hidden,false);assert.equal(prompts,0);
+ permission='granted';await $('#reconnect-file').onclick();assert.equal(prompts,1);assert.equal($('#reconnect-file').hidden,true);
+ await $('#disconnect-file').onclick();
+ delete globalThis.indexedDB;
+});
+test('reload never overwrites differing local or disk data; user can keep local version',async()=>{
+ const db=memoryDB();globalThis.indexedDB=db;
+ const disk=initialState();disk.projects[0].name='External version';let text=JSON.stringify(disk),writes=0;
+ const handle={name:'conflict.json',async queryPermission(){return 'granted';},async requestPermission(){return 'granted';},async getFile(){return {size:text.length,text:async()=>text};},async createWritable(){return {async write(value){text=value;},async close(){writes++;},async abort(){}};}};
+ const local=JSON.stringify(saved());await createFileMemory(db).save(handle);
+ await (await import('../dist/app.mjs?conflict')).fileReady;
+ assert.equal(JSON.stringify(saved()),local);assert.equal(JSON.parse(text).projects[0].name,'External version');assert.equal(writes,0);
+ assert.equal($('#read-remembered-file').hidden,false);assert.equal($('#write-remembered-file').hidden,false);
+ globalThis.confirm=()=>false;await $('#write-remembered-file').onclick();assert.equal(writes,0);
+ globalThis.confirm=()=>true;await $('#write-remembered-file').onclick();assert.deepEqual(JSON.parse(text),saved());assert.equal(writes,1);
+ await $('#disconnect-file').onclick();delete globalThis.confirm;delete globalThis.indexedDB;
+});
+
+test('remembered file can be read explicitly; denied or missing files preserve local data',async()=>{
+ const db=memoryDB();globalThis.indexedDB=db;
+ const disk=initialState();disk.projects[0].name='Chosen disk version';let denied=true,missing=false;
+ const handle={name:'disk.json',async queryPermission(){return 'prompt';},async requestPermission(){return denied?'denied':'granted';},async getFile(){if(missing)throw Error('File not found');return {size:100,text:async()=>JSON.stringify(disk)};}};
+ await createFileMemory(db).save(handle);const before=JSON.stringify(saved());
+ await (await import('../dist/app.mjs?read-remembered')).fileReady;
+ await $('#reconnect-file').onclick();assert.equal(JSON.stringify(saved()),before);assert.equal($('#reconnect-file').hidden,false);
+ denied=false;missing=true;await $('#reconnect-file').onclick();assert.equal(JSON.stringify(saved()),before);assert.match($('#file-status').textContent,/File not found/);
+ missing=false;globalThis.confirm=()=>true;await $('#read-remembered-file').onclick();assert.deepEqual(saved(),disk);
+ await $('#disconnect-file').onclick();delete globalThis.confirm;delete globalThis.indexedDB;
+});

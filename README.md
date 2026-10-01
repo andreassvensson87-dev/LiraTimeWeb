@@ -45,7 +45,7 @@ Klicka på en dag i månadskalendern för att se dagens summering. Dagar med reg
 
 Under **Sparas lokalt** kan du välja **Spara till ny fil** för att kopiera nuvarande uppgifter till en JSON-fil, eller **Öppna tidsfil** för att läsa en befintlig fil. Öppning ersätter webbläsarens uppgifter efter bekräftelse. Därefter sparas ändringar både i webbläsaren och i filen. Filnamn och sparstatus visas i samma meny.
 
-Välj filen igen efter omladdning eller nästa gång du öppnar appen. Utan ansluten fil fungerar webbläsarlagringen som tidigare. **Koppla från fil** behåller uppgifterna och fortsätter med enbart webbläsarlagring. Direkt fillagring kräver Chrome eller Edge på datorn.
+Appen kommer ihåg vald fil i samma webbläsare och på samma webbadress. Efter omladdning ansluts filen automatiskt om åtkomsten fortfarande är godkänd och uppgifterna stämmer med webbläsarkopian. Annars visas **Anslut sparad fil**, där du kan godkänna åtkomsten utan att välja fil igen. Om uppgifterna skiljer sig åt får du välja mellan **Läs in filens uppgifter** och **Spara webbläsarens uppgifter i filen**, med bekräftelse före ersättning. Utan ansluten fil fungerar webbläsarlagringen som tidigare. **Koppla från fil** glömmer filvalet, behåller uppgifterna och fortsätter med enbart webbläsarlagring. Direkt fillagring kräver Chrome eller Edge på datorn.
 
 Om filen inte kan sparas behålls ändringarna i webbläsaren och en varning visas. Om filen har ändrats utanför appen stoppas filskrivningen. Spara då webbläsarens version till en ny fil, eller öppna den externa filen om den ska ersätta webbläsarens version. Filen är inte avsedd för samtidig redigering från flera datorer.
 
