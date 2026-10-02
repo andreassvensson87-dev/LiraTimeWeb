@@ -8,13 +8,19 @@ En webbapp för personlig tidsregistrering med lokal lagring i webbläsaren. Upp
 
 För att flytta registreringar från localhost: exportera en JSON-säkerhetskopia under **Sparas lokalt**, öppna webbadressen och återställ säkerhetskopian där. Adresserna har separat lagring och synkroniseras inte.
 
-GitHub Actions kör kontroller och tester vid push till `main` och publicerar därefter `dist` på GitHub Pages.
+GitHub Actions kör kontroller och tester vid push till `main` och publicerar därefter `site` på GitHub Pages.
 
 ## Starta
 
 Dubbelklicka på **Starta LiraTime.command** på den här Macen. Startfilen använder systemets Node.js, annars den version som följer med Codex. Behåll terminalfönstret öppet och besök **http://localhost:5187**.
 
 Med Node.js 20 eller senare installerat kan du också köra `npm start`. Inga paket behöver installeras. `npm test` kör testerna.
+
+## Uppdatera appen
+
+Knappen **Sök uppdatering** finns längst ned i vänsterspalten. Appen söker även vid start, när fönstret får fokus och var femtonde minut. När en ny version finns visas **Uppdatera appen**. Uppdatering sker först när du klickar och blockeras om ett formulär är öppet eller en ändring håller på att sparas. Pågående klocka och sparade uppgifter behålls.
+
+`npm run build` skapar publiceringsmappen `site` med versionsmärkta programfiler så att en ny release inte blandas med gamla cachade filer.
 
 ## Tre vyer
 

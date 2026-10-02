@@ -1,3 +1,5 @@
+import {VERSION} from './version.mjs';
+import {createUpdater} from './update.mjs';
 import {KEY,colors,initialState,validState,dateKey,dayBounds,duration,clock,human,overlap,switchProject,archiveProject,summarizeDays,monthGrid} from './core.mjs';
 import {createFileStore,createFileMemory} from './file-store.mjs';
 import {createTimeline} from './timeline.mjs';
@@ -6,6 +8,7 @@ const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const time=value=>new Date(value).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
 const localInput=value=>`${dateKey(value)}T${time(value)}:${String(new Date(value).getSeconds()).padStart(2,'0')}`;
 let state,route='timer',selectedDay=dateKey(),selectedProject=null,editingId=null,editingProject=null;
+let pendingChanges=0;
 let toastTimer,storageBroken=false,undoChange=null,showArchived=false,editorOriginal=null;
 let summaryFrom=dateKey(),summaryTo=dateKey(),calendarMonth=dateKey().slice(0,7);
 let fileConnected=false,rememberedHandle=null;
@@ -17,6 +20,7 @@ try{state=read();if(localStorage.getItem(KEY)===null)localStorage.setItem(KEY,JS
 catch{storageBroken=true;state=initialState();report('Den lokala lagringen kunde inte läsas eller användas. Befintlig data har inte skrivits över.');}
 function notify(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,3500);}
 async function change(fn,{restore=false,redraw=true}={}){
+ pendingChanges++;
  const run=()=>{try{
   if(storageBroken&&!restore)throw Error('Lagringen är inte tillgänglig. Kontrollera webbläsarens inställningar eller återställ en säkerhetskopia.');
   const next=restore?structuredClone(state):read();fn(next);
@@ -24,7 +28,7 @@ async function change(fn,{restore=false,redraw=true}={}){
   localStorage.setItem(KEY,JSON.stringify(next));state=next;storageBroken=false;
   $('#error').hidden=true;if(!fileConnected)$('#save-status').textContent=rememberedHandle?'Fil behöver anslutas':'Sparas lokalt';void fileStore.save(next);if(redraw)render();return true;
  }catch(error){report(error.message);$('#save-status').textContent='Ändringen sparades inte';return false;}};
- return navigator.locks?navigator.locks.request('liratime-write',run):run();
+ try{return await (navigator.locks?navigator.locks.request('liratime-write',run):run());}finally{pendingChanges--;}
 }
 const allEntries=()=>[...state.entries,...(state.active?[state.active]:[])];
 const project=id=>state.projects.find(p=>p.id===id);
@@ -307,3 +311,18 @@ export const fileReady=(async()=>{
  catch{ $('#file-help').textContent='Det sparade filvalet kunde inte läsas. Du kan välja filen på nytt.'; }
  finally{$('#create-file').disabled=false;$('#open-file').disabled=false;}
 })();
+
+const updater=createUpdater({
+ version:VERSION,button:$('#update-app'),status:$('#update-status'),
+ fetchVersion:async()=>{const url=new URL('./version.json',import.meta.url);url.searchParams.set('check',Date.now());const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw Error('Offline');return response.json();},
+ beforeUpdate:()=>{
+  if($('#entry-dialog').open||$('#project-dialog').open)return 'Spara eller stäng formuläret innan du uppdaterar.';
+  if(storageBroken)return 'Säkra dina uppgifter innan du uppdaterar. Webbläsarlagringen fungerar inte.';
+  if(pendingChanges||fileStore.pending||choosingFile)return 'En ändring sparas. Försök igen om en stund.';
+  timeline.cancel();return '';
+ },
+ reload:version=>{const url=new URL(window.location.href);url.searchParams.set('release',version);window.location.replace(url.href);}
+});
+void updater.check();
+window.addEventListener('focus',()=>void updater.check());
+setInterval(()=>{if(!document.hidden)void updater.check();},15*60*1000);
