@@ -76,3 +76,19 @@ test('keeps the preview during asynchronous saving and renders only the persiste
  s.listeners.pointerdown(s.event('12:00'));await s.listeners.pointerup(s.event('13:00'));assert.equal(s.calls.length,1);
  resolve(true);await pending;assert.notEqual(s.surface.innerHTML,previous);assert.match(s.surface.innerHTML,/11:00–12:00/);
 });
+
+test('running start handle supports fast release while timer redraws and has no end handle',async()=>{
+ const entry={id:'live',projectId:'general',note:'Work',start:at('09:00')};const s=setup([entry]);
+ assert.match(s.surface.innerHTML,/data-mode="start"/);assert.doesNotMatch(s.surface.innerHTML,/data-mode="end"/);
+ s.listeners.pointerdown(s.event('09:00',entry,'start'));
+ s.controller.render({...s.data,now:at('23:01')});
+ await s.listeners.pointerup(s.event('08:00',entry,'start'));
+ assert.equal(s.calls[0].after.start,at('08:00'));assert.equal(s.calls[0].after.end,undefined);
+ assert.doesNotMatch(s.preview.textContent,/Invalid|NaN/);
+});
+test('running body stays fixed and cancelled start resize never commits',async()=>{
+ const entry={id:'live',projectId:'general',note:'Work',start:at('09:00')};const s=setup([entry]);
+ s.listeners.pointerdown(s.event('10:00',entry));await s.listeners.pointerup(s.event('11:00',entry));assert.equal(s.calls[0].type,'notice');
+ s.listeners.pointerdown(s.event('09:00',entry,'start'));s.listeners.pointermove(s.event('08:00',entry,'start'));s.listeners.pointercancel();await s.listeners.pointerup(s.event('08:00',entry,'start'));
+ assert.equal(s.calls.some(c=>c.type==='adjust'),false);
+});

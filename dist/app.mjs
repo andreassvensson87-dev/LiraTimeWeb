@@ -194,8 +194,13 @@ $('#summary-days').onclick=event=>{
 };
 for(const button of document.querySelectorAll('[data-close]'))button.onclick=()=>$('#'+button.dataset.close).close();
 async function adjustEntry(original,candidate,{undo=false}={}){
- const ok=await change(s=>{const existing=s.entries.find(e=>e.id===original.id);
+ const ok=await change(s=>{const existing=original.end?s.entries.find(e=>e.id===original.id):s.active?.id===original.id?s.active:null;
   if(!existing||existing.start!==original.start||existing.end!==original.end)throw Error('Tiden ändrades i en annan flik. Ladda om och försök igen.');
+  if(!original.end){
+   if(candidate.end!==undefined||!Number.isFinite(candidate.start)||candidate.start<=0||candidate.start>=Date.now())throw Error('Starttiden måste vara före nu.');
+   if(overlap(s.entries,{start:candidate.start,end:Date.now()}))throw Error('Tiden överlappar en annan registrering.');
+   existing.start=candidate.start;return;
+  }
   if(candidate.end<=candidate.start)throw Error('Sluttiden behöver vara efter starttiden.');
   if(overlap([...s.entries,...(s.active?[s.active]:[])],candidate,original.id))throw Error('Tiden överlappar en annan registrering.');
   existing.start=candidate.start;existing.end=candidate.end;

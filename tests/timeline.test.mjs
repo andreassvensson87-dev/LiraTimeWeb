@@ -60,3 +60,14 @@ test('moving and resizing can extend beyond the current time',()=>{
  const resized=adjustRange(morning,'end',2*3600000,day,[morning],current);
  assert.equal(resized.end,at('12:00'));
 });
+
+test('running entry start can resize without stopping, bounded by neighbors and now',()=>{
+ const active={id:'active',start:at('10:00'),projectId:'general',note:'Running'};
+ const previous={id:'old',start:at('08:00'),end:at('09:00')};
+ const result=adjustRange(active,'start',-2*3600000,day,[previous,active],at('11:00'));
+ assert.equal(result.start,at('09:00'));assert.equal(result.end,undefined);assert.equal(result.note,'Running');
+ assert.equal(adjustRange(active,'start',3*3600000,day,[active],at('11:00')).start,at('11:00')-1);
+ assert.equal(adjustRange(active,'move',300000,day,[active],at('11:00')),null);
+ assert.equal(adjustRange(active,'end',300000,day,[active],at('11:00')),null);
+ const overnight={...active,start:at('00:00')-3600000};assert.equal(adjustRange(overnight,'start',300000,day,[overnight],at('11:00')),null);
+});

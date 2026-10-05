@@ -37,7 +37,7 @@ Tidslinjen fyller arbetsytan. Välj dag med datumväljaren eller pilarna.
 - Tangentbord: Tab fokuserar block, Enter öppnar redigering, upp/ned flyttar, Skift + upp/ned ändrar slut, Alt + upp/ned ändrar start. Escape avbryter drag.
 - Mobil: **Rita tid** aktiverar markering av tom tid. Stäng av för att bläddra. Block kan dras direkt.
 
-Pågående pass stoppas före dragredigering. Pass över midnatt delas mellan dagarna i visningen. Flytta hela sådana pass via formulärets datumfält. Sommartidsdygn visas med 23 eller 25 timmar och tidszon vid upprepade timmar.
+På pågående pass kan starttiden ändras genom att dra överkanten eller använda Alt + pil upp/ned. Klockan fortsätter gå. Starttiden begränsas av föregående registrering och aktuell tid. För pass över midnatt ändras starten på den dag där passet började. Pass över midnatt delas mellan dagarna i visningen. Flytta hela sådana pass via formulärets datumfält. Sommartidsdygn visas med 23 eller 25 timmar och tidszon vid upprepade timmar.
 
 ### Projekt
 

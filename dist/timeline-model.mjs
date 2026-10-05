@@ -35,7 +35,16 @@ export function createRange(anchor, target, day, entries, now = Date.now()) {
 }
 export function adjustRange(entry, mode, delta, day, entries, now = Date.now()) {
   const [dayStart, dayEnd] = dayBounds(day);
-  if (!entry.end) return null;
+  if (!entry.end) {
+    if(mode!=='start'||entry.start<dayStart||entry.start>=dayEnd)return null;
+    const others=entries.filter(e=>e.id!==entry.id);
+    const lower=others.filter(e=>(e.end??Infinity)<=entry.start).reduce((n,e)=>Math.max(n,e.end),dayStart);
+    const upper=Math.min(dayEnd-1,now-1);
+    if(lower>upper)return null;
+    const start=delta===0?entry.start:clamp(snapTime(entry.start+Math.round(delta/STEP)*STEP,day),lower,upper);
+    if(start>=now||overlap(others,{start,end:now}))return null;
+    return {...entry,start};
+  }
   const amount = Math.round(delta / STEP) * STEP;
   if (amount === 0) return {...entry};
   let start = entry.start, end = entry.end;
@@ -66,8 +75,8 @@ export function adjustRange(entry, mode, delta, day, entries, now = Date.now()) 
   return result;
 }
 export function rangeError(range, entries, ignoreId, now = Date.now()) {
-  if (!range || range.end <= range.start) return 'Här finns inte tillräckligt med ledig tid.';
-  if (overlap(entries,range,ignoreId)) return 'Tiden överlappar en annan registrering.';
+  if (!range || (range.end??now) <= range.start) return 'Här finns inte tillräckligt med ledig tid.';
+  if (overlap(entries,{...range,end:range.end??now},ignoreId)) return 'Tiden överlappar en annan registrering.';
   return '';
 }
 // Short entries get separate lanes when their minimum clickable height would collide.

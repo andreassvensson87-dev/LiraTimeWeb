@@ -27,9 +27,9 @@ export function createTimeline({surface, viewport, message, onCreate, onEdit, on
     surface.innerHTML=grid.join('')+blocks.map(({entry,top,height:bh,lane})=>{
       const p=projects.find(p=>p.id===entry.projectId), running=!entry.end;
       const name=entry.note||p.name;
-      const startHandle=!running && entry.start>=start?'<span class="resize-handle top" data-mode="start" title="Dra för att ändra starttid"></span>':'';
+      const startHandle=entry.start>=start?'<span class="resize-handle top" data-mode="start" title="Dra för att ändra starttid"></span>':'';
       const endHandle=!running && entry.end<=end?'<span class="resize-handle bottom" data-mode="end" title="Dra för att ändra sluttid"></span>':'';
-      return `<div class="time-block ${running?'is-running':''} ${bh<58?'compact-block':''}" role="button" tabindex="0" data-entry="${escape(entry.id)}" aria-label="${escape(name)}, ${label(entry.start,entry.end??now)}${running?', pågår':'. Enter för att redigera. Pil upp eller ned flyttar fem minuter.'}" title="${escape(name)} · ${label(entry.start,entry.end??now)}" style="--block-color:${p.color};top:${top}px;height:${bh}px;left:calc(70px + (100% - 86px) * ${lane/lanes});width:calc((100% - 86px) / ${lanes} - 4px)">${startHandle}<div class="block-body"><span class="block-time">${label(Math.max(entry.start,start),Math.min(entry.end??now,end))}${running?' · Pågår':''}</span><strong>${escape(name)}</strong><span class="block-project">${escape(p.name)}</span></div>${endHandle}</div>`;
+      return `<div class="time-block ${running?'is-running':''} ${bh<58?'compact-block':''}" role="button" tabindex="0" data-entry="${escape(entry.id)}" aria-label="${escape(name)}, ${label(entry.start,entry.end??now)}${running?', pågår. Dra överkanten eller använd Alt och pil upp eller ned för att ändra starttiden.':'. Enter för att redigera. Pil upp eller ned flyttar fem minuter.'}" title="${escape(name)} · ${label(entry.start,entry.end??now)}" style="--block-color:${p.color};top:${top}px;height:${bh}px;left:calc(70px + (100% - 86px) * ${lane/lanes});width:calc((100% - 86px) / ${lanes} - 4px)">${startHandle}<div class="block-body"><span class="block-time">${label(Math.max(entry.start,start),Math.min(entry.end??now,end))}${running?' · Pågår':''}</span><strong>${escape(name)}</strong><span class="block-project">${escape(p.name)}</span></div>${endHandle}</div>`;
     }).join('')+current+'<div class="drag-preview" hidden></div>';
     if (focusedEntry) { const el=Array.from(surface.querySelectorAll('[data-entry]')).find(el=>el.dataset.entry===focusedEntry);el?.focus({preventScroll:true});focusedEntry=null; }
     if(lastDay!==day){
@@ -43,21 +43,22 @@ export function createTimeline({surface, viewport, message, onCreate, onEdit, on
   function showPreview(range,error){
     const preview=$('.drag-preview');
     if (!range){preview.hidden=true;message.textContent=error;return;}
+    const end=Math.min(range.end??data.now??Date.now(),dayBounds(data.day)[1]);
     preview.hidden=false;
     preview.classList.toggle('invalid',!!error);
     preview.style.top=`${timeToY(range.start,data.day)}px`;
-    preview.style.height=`${Math.max(26,(range.end-range.start)/3600000*HOUR_HEIGHT)}px`;
-    preview.textContent=label(range.start,range.end);
-    message.textContent=error || `${gesture.mode==='create'?'Ny tid':gesture.mode==='move'?'Flytta tid':'Ändra tid'}: ${label(range.start,range.end)}`;
+    preview.style.height=`${Math.max(26,(end-range.start)/3600000*HOUR_HEIGHT)}px`;
+    preview.textContent=label(range.start,end);
+    message.textContent=error || `${gesture.mode==='create'?'Ny tid':gesture.mode==='move'?'Flytta tid':'Ändra tid'}: ${label(range.start,end)}`;
   }
   function updatePreview(){
     if(!gesture?.moved)return;
     const current=point({clientY:gesture.clientY});
     const candidate=gesture.mode==='create'
       ? createRange(gesture.anchor,current,gesture.day,data.entries)
-      : adjustRange(gesture.original,gesture.mode,current-gesture.anchor,gesture.day,data.entries);
+      : adjustRange(gesture.original,gesture.mode,current-gesture.anchor,gesture.day,data.entries,data.now??Date.now());
     gesture.candidate=candidate;
-    const error=candidate?rangeError(candidate,data.entries,gesture.original?.id):'Ändringen ryms inte här. Välj ledig tid inom dagen.';
+    const error=candidate?rangeError(candidate,data.entries,gesture.original?.id,data.now??Date.now()):'Ändringen ryms inte här. Välj ledig tid inom dagen.';
     gesture.error=error;
     gesture.preview=candidate||gesture.preview;
     showPreview(gesture.preview,error);
@@ -81,8 +82,8 @@ export function createTimeline({surface, viewport, message, onCreate, onEdit, on
     if(!block && event.clientX-surface.getBoundingClientRect().left<65)return;
     if(event.pointerType==='touch' && !block && !drawTouch)return;
     const original=block && data.entries.find(e=>e.id===block.dataset.entry);
-    if(original && !original.end){onNotice('Stoppa klockan för att justera det pågående passet.');return;}
     const mode=block?(event.target.closest('[data-mode]')?.dataset.mode||'move'):'create';
+    if(original && !original.end && mode!=='start'){onNotice('Dra i överkanten för att ändra starttiden medan klockan går.');return;}
     gesture={pointerId:event.pointerId,day:data.day,original:original?{...original}:null,mode,anchor:point(event),clientY:event.clientY,startY:event.clientY,moved:false};
     event.preventDefault();surface.setPointerCapture(event.pointerId);
   });
@@ -105,7 +106,7 @@ export function createTimeline({surface, viewport, message, onCreate, onEdit, on
     saving=true;
     try {
       if(!finished.moved){
-        if(finished.original)onEdit(finished.original);
+        if(finished.original){if(finished.original.end)onEdit(finished.original);else onNotice('Dra i överkanten för att ändra starttiden.');}
         else {const range=createRange(finished.anchor,finished.anchor+30*60000,finished.day,data.entries);if(range)onCreate(range);else onNotice('Välj ett ledigt intervall på dagen.');}
         message.textContent='';return;
       }
@@ -128,10 +129,10 @@ export function createTimeline({surface, viewport, message, onCreate, onEdit, on
     if(saving)return;
     const block=event.target.closest('[data-entry]');if(!block)return;
     const entry=data.entries.find(e=>e.id===block.dataset.entry);if(!entry)return;
-    if(event.key==='Enter' || event.key===' '){event.preventDefault();if(entry.end)onEdit(entry);else onNotice('Stoppa klockan för att justera det pågående passet.');}
-    if(['ArrowUp','ArrowDown'].includes(event.key) && entry.end){
+    if(event.key==='Enter' || event.key===' '){event.preventDefault();if(entry.end)onEdit(entry);else onNotice('Dra i överkanten eller använd Alt och pil upp eller ned för att ändra starttiden.');}
+    if(['ArrowUp','ArrowDown'].includes(event.key) && (entry.end||event.altKey)){
       event.preventDefault();const mode=event.altKey?'start':event.shiftKey?'end':'move';
-      const candidate=adjustRange(entry,mode,event.key==='ArrowUp'?-300000:300000,data.day,data.entries);
+      const candidate=adjustRange(entry,mode,event.key==='ArrowUp'?-300000:300000,data.day,data.entries,data.now??Date.now());
       if(candidate){focusedEntry=entry.id;await onAdjust({...entry},candidate);}else onNotice('Ändringen ryms inte här eller överlappar annan tid.');
     }
   });

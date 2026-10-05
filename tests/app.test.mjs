@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {KEY,initialState} from '../dist/core.mjs';
+import {KEY,initialState,dateKey} from '../dist/core.mjs';
 
 // Minimal DOM adapter lets us exercise the application's event handlers and storage
 // without depending on a browser driver. Layout is checked separately in-browser.
@@ -125,4 +125,19 @@ test('remembered file can be read explicitly; denied or missing files preserve l
  denied=false;missing=true;await $('#reconnect-file').onclick();assert.equal(JSON.stringify(saved()),before);assert.match($('#file-status').textContent,/File not found/);
  missing=false;globalThis.confirm=()=>true;await $('#read-remembered-file').onclick();assert.deepEqual(saved(),disk);
  await $('#disconnect-file').onclick();delete globalThis.confirm;delete globalThis.indexedDB;
+});
+
+test('active start adjustment persists and undo keeps timer running; stopped timer rejects stale edit',async()=>{
+ const fixture=initialState();const now=Date.now(),start=now-3600000;
+ fixture.active={id:'live-resize',projectId:'general',note:'Ongoing note',start};
+ localStorage.setItem(KEY,JSON.stringify(fixture));
+ await (await import('../dist/app.mjs?active-resize')).fileReady;
+ $('#date-picker').onchange({target:{value:dateKey(start)}});
+ const event={key:'ArrowUp',altKey:true,preventDefault(){},target:{closest:()=>({dataset:{entry:'live-resize'}})}};
+ await $('#timeline-surface').listeners.keydown(event);
+ assert.ok(saved().active.start<start);assert.equal(saved().active.note,'Ongoing note');assert.equal(saved().active.end,undefined);assert.equal(saved().entries.length,0);
+ await $('#undo-time').onclick();assert.equal(saved().active.start,start);
+ const stopped=saved();stopped.entries.push({...stopped.active,end:now});stopped.active=null;localStorage.setItem(KEY,JSON.stringify(stopped));
+ await $('#timeline-surface').listeners.keydown(event);
+ assert.equal(saved().active,null);assert.equal(saved().entries[0].start,start);assert.match($('#error').textContent,/annan flik/);
 });
