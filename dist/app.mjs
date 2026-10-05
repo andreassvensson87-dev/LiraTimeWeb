@@ -15,10 +15,11 @@ let fileConnected=false,rememberedHandle=null;
 const fileMemory=createFileMemory();
 const fileStore=createFileStore(info=>{fileConnected=info.connected;if(info.connected&&/Endast sparat|inte uppdaterad/.test(info.message))$('#reconnect-file').hidden=false;$('#file-status').textContent=(info.name?info.name+' · ':'')+info.message;$('#disconnect-file').hidden=!info.connected;$('#save-status').textContent=info.connected?(/Endast sparat|inte uppdaterad/.test(info.message)?'Filen är inte uppdaterad':info.message.startsWith('Sparar')?'Sparar till fil…':'Webbläsare + fil'):'Sparas lokalt';});
 function read(){const raw=localStorage.getItem(KEY);if(raw===null)return initialState();const saved=JSON.parse(raw);if(!validState(saved))throw Error('Sparad data kunde inte läsas. Återställ en säkerhetskopia.');return saved;}
-function report(message){$('#error').textContent=message;$('#error').hidden=false;}
+function storageFeedback(message,error=false){if(!$('#storage-dialog').open)return;const feedback=$('#storage-feedback');feedback.textContent=message;feedback.hidden=false;feedback.classList.toggle('form-error',error);}
+function report(message){storageFeedback(message,true);$('#error').textContent=message;$('#error').hidden=false;}
 try{state=read();if(localStorage.getItem(KEY)===null)localStorage.setItem(KEY,JSON.stringify(state));}
 catch{storageBroken=true;state=initialState();report('Den lokala lagringen kunde inte läsas eller användas. Befintlig data har inte skrivits över.');}
-function notify(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,3500);}
+function notify(message){storageFeedback(message);$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,3500);}
 async function change(fn,{restore=false,redraw=true}={}){
  pendingChanges++;
  const run=()=>{try{
@@ -212,6 +213,8 @@ $('#undo-time').onclick=()=>{if(undoChange)return adjustEntry(undoChange.after,u
 $('#draw-touch').onclick=()=>{const enabled=$('#draw-touch').getAttribute('aria-pressed')!=='true';$('#draw-touch').setAttribute('aria-pressed',String(enabled));timeline.setDrawTouch(enabled);};
 $('#timeline-now').onclick=()=>timeline.focusNow();
 
+$('#storage-settings').onclick=()=>{$('#storage-feedback').hidden=true;$('#storage-dialog').showModal();};
+
 const fileSupported=typeof window.showSaveFilePicker==='function'&&typeof window.showOpenFilePicker==='function';
 $('#create-file').disabled=!fileSupported;$('#open-file').disabled=!fileSupported;
 if(!fileSupported)$('#file-help').textContent='Direkt fillagring kräver Chrome eller Edge på datorn. Webbläsarlagring och säkerhetskopior fungerar här.';
@@ -256,7 +259,7 @@ async function resumeFile(mode='compare',request=false){
  finally{choosingFile=false;}
 }
 async function chooseFile(open){
- if(choosingFile)return;choosingFile=true;
+ if(choosingFile)return;choosingFile=true;$('#storage-feedback').hidden=true;
  try{
   const handle=open?(await window.showOpenFilePicker({types:pickerTypes,multiple:false}))[0]:await window.showSaveFilePicker({suggestedName:'LiraTime.json',types:pickerTypes});
   const file=await handle.getFile();if(file.size>10000000)throw Error('Välj en fil under 10 MB.');
