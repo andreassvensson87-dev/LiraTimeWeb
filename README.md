@@ -18,7 +18,7 @@ Med Node.js 20 eller senare installerat kan du också köra `npm start`. Inga pa
 
 ## Uppdatera appen
 
-Knappen **Sök uppdatering** finns längst ned i vänsterspalten. Appen söker även vid start, när fönstret får fokus och var femtonde minut. När en ny version finns visas **Uppdatera appen**. Uppdatering sker först när du klickar och blockeras om ett formulär är öppet eller en ändring håller på att sparas. Pågående klocka och sparade uppgifter behålls.
+Appen söker automatiskt vid start, när fönstret får fokus och var femtonde minut. Knappen **Uppdatera appen** visas längst ned i vänsterspalten enbart när en ny version finns. Uppdatering sker först när du klickar och blockeras om ett formulär är öppet eller en ändring håller på att sparas. Pågående klocka och sparade uppgifter behålls.
 
 `npm run build` skapar publiceringsmappen `site` med versionsmärkta programfiler så att en ny release inte blandas med gamla cachade filer.
 
