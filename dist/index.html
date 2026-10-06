@@ -9,7 +9,7 @@
  <div id="sidebar-projects" class="sidebar-projects"></div>
  <section id="running-panel" class="running-panel" aria-label="Pågående registrering" hidden><div class="running-label"><span class="live-dot"></span>PÅGÅR</div><div class="running-heading"><strong id="running-project"></strong><button id="stop-timer" class="stop-button" aria-label="Stoppa tiden" title="Stoppa tiden">■</button></div><output id="timer-clock">00:00:00</output><label for="running-note">Kommentar</label><textarea id="running-note" maxlength="2000" rows="3" placeholder="Vad jobbar du med?"></textarea><span class="note-status" id="note-status">Sparas automatiskt</span></section>
  <button id="storage-settings" class="storage-tools" aria-haspopup="dialog"><span>Lagring</span><span id="save-status">Sparas lokalt</span><span aria-hidden="true">›</span></button>
-<section class="app-update" aria-label="Appuppdatering"><button id="update-app" type="button">Sök uppdatering</button><p id="update-status" role="status"></p></section>
+<section id="app-update" class="app-update" aria-label="Appuppdatering" hidden><button id="update-app" type="button" hidden>Uppdatera appen</button><p id="update-status" role="status"></p></section>
 </aside>
 <main>
  <div id="error" class="error" role="alert" hidden></div>

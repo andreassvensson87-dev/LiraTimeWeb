@@ -321,7 +321,7 @@ export const fileReady=(async()=>{
 })();
 
 const updater=createUpdater({
- version:VERSION,button:$('#update-app'),status:$('#update-status'),
+ version:VERSION,button:$('#update-app'),status:$('#update-status'),container:$('#app-update'),
  fetchVersion:async()=>{const url=new URL('./version.json',import.meta.url);url.searchParams.set('check',Date.now());const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw Error('Offline');return response.json();},
  beforeUpdate:()=>{
   if($('#entry-dialog').open||$('#project-dialog').open)return 'Spara eller stäng formuläret innan du uppdaterar.';
