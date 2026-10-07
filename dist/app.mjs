@@ -35,7 +35,7 @@ const allEntries=()=>[...state.entries,...(state.active?[state.active]:[])];
 const project=id=>state.projects.find(p=>p.id===id);
 function options(current){return state.projects.filter(p=>!p.archived||p.id===current).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.archived?' (arkiverat)':''}</option>`).join('');}
 function renderSidebar(){
- const active=state.projects.filter(p=>!p.archived);
+ const active=state.projects.filter(p=>!p.archived).sort((a,b)=>a.name.localeCompare(b.name,'sv',{sensitivity:'base',numeric:true}));
  if(!active.some(p=>p.id===selectedProject))selectedProject=active.find(p=>p.id===state.active?.projectId)?.id||active[0]?.id||null;
  $('#sidebar-projects').innerHTML=active.length?active.map(p=>{
   const running=state.active?.projectId===p.id;
