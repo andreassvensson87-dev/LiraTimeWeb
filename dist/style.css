@@ -10,4 +10,4 @@
 
 #storage-feedback{padding:10px 12px;margin-bottom:16px;border:1px solid var(--border);border-radius:6px;background:#f7f9f7}
 
-.project-sort{display:flex;align-items:center;gap:8px;margin:0 10px 10px;font-size:11px;color:#abc2ae}.project-sort select{min-width:0;flex:1;border:1px solid #496658;border-radius:5px;background:#23473d;color:#edf5ef;padding:5px 6px;font-size:12px}
+.sidebar-section{gap:7px;padding-inline:5px;letter-spacing:1px}.sidebar-section>span,.sidebar-section>button{flex-shrink:0}.sidebar-section>button{padding:0}.project-sort{min-width:0;flex:1;width:0;border:1px solid #496658;border-radius:5px;background:#23473d;color:#edf5ef;padding:5px 2px;font-size:11px;letter-spacing:normal}
