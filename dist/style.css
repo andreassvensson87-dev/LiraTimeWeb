@@ -9,3 +9,5 @@
 .app-update{padding:12px 10px 0;border-top:1px solid #ffffff20;margin-top:12px}.app-update button{background:transparent;border:1px solid #ffffff40;color:#e1ecd9;border-radius:6px;padding:7px 10px;cursor:pointer}.app-update p{font-size:12px;line-height:1.5;color:#c6d8ca;margin:7px 0 0}.app-update p:empty{display:none}
 
 #storage-feedback{padding:10px 12px;margin-bottom:16px;border:1px solid var(--border);border-radius:6px;background:#f7f9f7}
+
+.project-sort{display:flex;align-items:center;gap:8px;margin:0 10px 10px;font-size:11px;color:#abc2ae}.project-sort select{min-width:0;flex:1;border:1px solid #496658;border-radius:5px;background:#23473d;color:#edf5ef;padding:5px 6px;font-size:12px}

@@ -45,3 +45,18 @@ export function monthGrid(month) {
  first.setDate(first.getDate()-(first.getDay()+6)%7);
  return Array.from({length:42},(_,index)=>{const day=new Date(first);day.setDate(day.getDate()+index);return dateKey(day);});
 }
+
+export function sortedProjects(state, mode='name', now=Date.now()) {
+ const entries=[...state.entries,...(state.active?[state.active]:[])], totals=new Map(), recent=new Map();
+ for(const entry of entries){
+  totals.set(entry.projectId,(totals.get(entry.projectId)||0)+duration(entry,dateKey(now),now));
+  if(entry.start<=now)recent.set(entry.projectId,Math.max(recent.get(entry.projectId)||0,Math.min(entry.end??now,now)));
+ }
+ const name=(a,b)=>a.name.localeCompare(b.name,'sv',{sensitivity:'base',numeric:true});
+ return state.projects.filter(p=>!p.archived).sort((a,b)=>{
+  if(mode==='name-desc')return name(b,a);
+  if(mode==='today')return (totals.get(b.id)||0)-(totals.get(a.id)||0)||name(a,b);
+  if(mode==='recent')return (recent.get(b.id)||0)-(recent.get(a.id)||0)||name(a,b);
+  return name(a,b);
+ });
+}

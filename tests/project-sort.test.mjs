@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {sortedProjects} from '../dist/core.mjs';
+const now=+new Date('2026-10-07T12:00:00');
+const hour=3600000;
+const state={projects:[{id:'o',name:'Övrigt'},{id:'b',name:'Beta'},{id:'a',name:'Alfa'},{id:'old',name:'Arkiverat',archived:true}],entries:[{projectId:'a',start:now-4*hour,end:now-2*hour},{projectId:'b',start:now-hour,end:now-hour/2},{projectId:'o',start:now+hour,end:now+2*hour}],active:{projectId:'b',start:now-hour/4}};
+const ids=mode=>sortedProjects(state,mode,now).map(p=>p.id);
+test('sidebar sorts Swedish names both ways without changing stored project order',()=>{assert.deepEqual(ids('name'),['a','b','o']);assert.deepEqual(ids('name-desc'),['o','b','a']);assert.deepEqual(state.projects.map(p=>p.id),['o','b','a','old']);});
+test('daily time includes planned time; recent use includes running timer but excludes future entries',()=>{assert.deepEqual(ids('today'),['a','o','b']);assert.deepEqual(ids('recent'),['b','a','o']);});
+test('projects without time use alphabetical tie breaking',()=>{const empty={...state,entries:[],active:null};for(const mode of ['today','recent'])assert.deepEqual(sortedProjects(empty,mode,now).map(p=>p.id),['a','b','o']);});

@@ -1,6 +1,6 @@
 import {VERSION} from './version.mjs';
 import {createUpdater} from './update.mjs';
-import {KEY,colors,initialState,validState,dateKey,dayBounds,duration,clock,human,overlap,switchProject,archiveProject,summarizeDays,monthGrid} from './core.mjs';
+import {KEY,colors,sortedProjects,initialState,validState,dateKey,dayBounds,duration,clock,human,overlap,switchProject,archiveProject,summarizeDays,monthGrid} from './core.mjs';
 import {createFileStore,createFileMemory} from './file-store.mjs';
 import {createTimeline} from './timeline.mjs';
 const $=selector=>document.querySelector(selector);
@@ -8,6 +8,9 @@ const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const time=value=>new Date(value).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
 const localInput=value=>`${dateKey(value)}T${time(value)}:${String(new Date(value).getSeconds()).padStart(2,'0')}`;
 let state,route='timer',selectedDay=dateKey(),selectedProject=null,editingId=null,editingProject=null;
+const sortKey='liratime.project-sort',sortModes=['name','name-desc','today','recent'];
+let projectSort='name';
+try{const saved=localStorage.getItem(sortKey);if(sortModes.includes(saved))projectSort=saved;}catch{}
 let pendingChanges=0;
 let toastTimer,storageBroken=false,undoChange=null,showArchived=false,editorOriginal=null;
 let summaryFrom=dateKey(),summaryTo=dateKey(),calendarMonth=dateKey().slice(0,7);
@@ -35,7 +38,8 @@ const allEntries=()=>[...state.entries,...(state.active?[state.active]:[])];
 const project=id=>state.projects.find(p=>p.id===id);
 function options(current){return state.projects.filter(p=>!p.archived||p.id===current).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.archived?' (arkiverat)':''}</option>`).join('');}
 function renderSidebar(){
- const active=state.projects.filter(p=>!p.archived).sort((a,b)=>a.name.localeCompare(b.name,'sv',{sensitivity:'base',numeric:true}));
+ const active=sortedProjects(state,projectSort);
+ $('#project-sort').value=projectSort;
  if(!active.some(p=>p.id===selectedProject))selectedProject=active.find(p=>p.id===state.active?.projectId)?.id||active[0]?.id||null;
  $('#sidebar-projects').innerHTML=active.length?active.map(p=>{
   const running=state.active?.projectId===p.id;
@@ -116,6 +120,11 @@ async function stop(){
  if(await change(s=>{if(s.active){s.entries.push({...s.active,end:Math.max(Date.now(),s.active.start+1)});s.active=null;}}))notify('Tiden är sparad.');
 }
 $('#stop-timer').onclick=stop;
+$('#project-sort').onchange=event=>{
+ if(!sortModes.includes(event.target.value))return;
+ projectSort=event.target.value;renderSidebar();
+ try{localStorage.setItem(sortKey,projectSort);}catch{notify('Sorteringen ändrades men kunde inte sparas till nästa besök.');}
+};
 $('#sidebar-projects').onclick=event=>{
  const play=event.target.closest('[data-project-start]'),select=event.target.closest('[data-select-project]');
  if(play)return state.active?.projectId===play.dataset.projectStart?stop():start(play.dataset.projectStart);
